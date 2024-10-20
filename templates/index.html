@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload to Discord</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1 class="animate-fadein">Upload Files to Discord</h1>
+        <div class="form-container animate-slidein">
+            <form id="upload-form" action="/upload" method="post" enctype="multipart/form-data">
+                <input type="file" name="file" required>
+                <button type="submit">Upload File</button>
+                <div class="loader" id="upload-loader" style="display:none;"></div>
+            </form>
+            <div id="upload-response"></div>
+        </div>
+        <div class="form-container animate-slidein">
+            <h2>Download Parts by Unique Code</h2>
+            <form id="download-form" action="/download" method="post">
+                <input type="text" name="unique_code" placeholder="Enter Unique Code" required>
+                <button type="submit">Download Parts</button>
+                <div class="loader" id="download-loader" style="display:none;"></div>
+            </form>
+            <div id="download-response"></div>
+        </div>
+    </div>
+
+    <script>
+        const uploadForm = document.getElementById('upload-form');
+        const downloadForm = document.getElementById('download-form');
+        const uploadLoader = document.getElementById('upload-loader');
+        const downloadLoader = document.getElementById('download-loader');
+        const uploadResponse = document.getElementById('upload-response');
+        const downloadResponse = document.getElementById('download-response');
+
+        uploadForm.onsubmit = function (event) {
+            event.preventDefault(); // Prevent default form submission
+            uploadLoader.style.display = 'block'; // Show loading indicator
+
+            const formData = new FormData(uploadForm);
+
+            fetch(uploadForm.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                uploadLoader.style.display = 'none'; // Hide loading indicator
+                if (data.unique_code) {
+                    uploadResponse.innerHTML = `<p>File uploaded successfully! Unique Code: <strong>${data.unique_code}</strong></p>`;
+                } else {
+                    uploadResponse.innerHTML = `<p>Error: ${data.error}</p>`;
+                }
+            })
+            .catch(error => {
+                uploadLoader.style.display = 'none';
+                uploadResponse.innerHTML = `<p>Error: ${error.message}</p>`;
+            });
+        };
+
+        downloadForm.onsubmit = function (event) {
+            event.preventDefault(); // Prevent default form submission
+            downloadLoader.style.display = 'block'; // Show loading indicator
+
+            const formData = new FormData(downloadForm);
+
+            fetch(downloadForm.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.blob(); // Get the response as a blob
+                } else {
+                    throw new Error('Failed to download file');
+                }
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'combined.zip'; // Default filename
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                downloadLoader.style.display = 'none'; // Hide loading indicator
+                downloadResponse.innerHTML = '<p>Download initiated.</p>';
+            })
+            .catch(error => {
+                downloadLoader.style.display = 'none';
+                downloadResponse.innerHTML = `<p>Error: ${error.message}</p>`;
+            });
+        };
+    </script>
+</body>
+</html>
