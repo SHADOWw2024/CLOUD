@@ -1,5 +1,4 @@
 # discord-cloud
-Absolutely! Here’s a concise overview of what your code does:
 
 ### Overview of the Discord Bot and Flask Web Application
 
